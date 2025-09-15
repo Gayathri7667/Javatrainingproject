@@ -1,0 +1,81 @@
+package RoleBasedAccessDemo;
+
+interface Role {
+    void accessResource(String resource);
+}
+
+// ---------------- Role Implementations ----------------
+
+// Admin: Can access any resource
+class Admin implements Role {
+    @Override
+    public void accessResource(String resource) {
+        System.out.println("Admin accessing " + resource + ": Access granted ✅");
+    }
+}
+
+// Manager: Can access reports and team-data, but not confidential
+class Manager implements Role {
+    @Override
+    public void accessResource(String resource) {
+        switch (resource.toLowerCase()) {
+            case "reports":
+            case "team-data":
+                System.out.println("Manager accessing " + resource + ": Access granted ✅");
+                break;
+            default:
+                System.out.println("Manager accessing " + resource + ": Access denied ❌");
+        }
+    }
+}
+
+// Employee: Can access team-data only
+class Employee implements Role {
+    @Override
+    public void accessResource(String resource) {
+        if ("team-data".equalsIgnoreCase(resource)) {
+            System.out.println("Employee accessing " + resource + ": Access granted ✅");
+        } else {
+            System.out.println("Employee accessing " + resource + ": Access denied ❌");
+        }
+    }
+}
+
+// Guest: Can access public-info only
+class Guest implements Role {
+    @Override
+    public void accessResource(String resource) {
+        if ("public-info".equalsIgnoreCase(resource)) {
+            System.out.println("Guest accessing " + resource + ": Access granted ✅");
+        } else {
+            System.out.println("Guest accessing " + resource + ": Access denied ❌");
+        }
+    }
+}
+
+// ---------------- Test Class ----------------
+public class rolebasedaccessdemo {
+    public static void main(String[] args) {
+        // Create roles
+        Role admin = new Admin();
+        Role manager = new Manager();
+        Role employee = new Employee();
+        Role guest = new Guest();
+
+        // Test cases
+        System.out.println("=== Admin ===");
+        admin.accessResource("confidential");
+
+        System.out.println("\n=== Manager ===");
+        manager.accessResource("reports");        // granted
+        manager.accessResource("confidential");   // denied
+
+        System.out.println("\n=== Employee ===");
+        employee.accessResource("team-data");     // granted
+        employee.accessResource("reports");       // denied
+
+        System.out.println("\n=== Guest ===");
+        guest.accessResource("public-info");      // granted
+        guest.accessResource("team-data");        // denied
+    }
+}
