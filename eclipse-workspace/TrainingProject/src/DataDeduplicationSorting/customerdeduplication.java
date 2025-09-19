@@ -1,0 +1,117 @@
+package DataDeduplicationSorting;
+
+import java.io.*;
+import java.nio.file.*;
+import java.util.*;
+import java.util.stream.Collectors;
+
+class Customer {
+    int customerId;
+    String name;
+    String email;
+    String phone;
+    String city;
+
+    public Customer(int customerId, String name, String email, String phone, String city) {
+        this.customerId = customerId;
+        this.name = name;
+        this.email = email.toLowerCase(); // normalize for deduplication
+        this.phone = phone;
+        this.city = city;
+    }
+
+    @Override
+    public String toString() {
+        return customerId + "," + name + "," + email + "," + phone + "," + city;
+    }
+}
+
+public class customerdeduplication {
+
+    public static void main(String[] args) {
+        String inputFile = "customers.csv";
+        String outputFile = "cleaned_customers.csv";
+
+        try {
+            List<Customer> customers = readCustomers(inputFile);
+            List<Customer> cleaned = removeDuplicates(customers);
+            List<Customer> sorted = sortCustomers(cleaned);
+            writeCustomers(sorted, outputFile);
+            System.out.println("✅ Cleaning done. Output written to " + outputFile);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Step 1: Read from CSV
+    private static List<Customer> readCustomers(String fileName) throws IOException {
+        List<Customer> customers = new ArrayList<>();
+        List<String> lines = Files.readAllLines(Paths.get(fileName));
+
+        // Skip header (start from index 1)
+        for (int i = 1; i < lines.size(); i++) {
+            String[] parts = lines.get(i).split(",");
+            if (parts.length < 5) continue; // skip invalid lines
+            customers.add(new Customer(
+                    Integer.parseInt(parts[0].trim()),
+                    parts[1].trim(),
+                    parts[2].trim(),
+                    parts[3].trim(),
+                    parts[4].trim()
+            ));
+        }
+        return customers;
+    }
+
+    // Step 2: Remove duplicates
+    private static List<Customer> removeDuplicates(List<Customer> customers) {
+        // Map for email -> Customer
+        Map<String, Customer> emailMap = new HashMap<>();
+        // Map for phone -> Customer
+        Map<String, Customer> phoneMap = new HashMap<>();
+
+        for (Customer c : customers) {
+            Customer existingByEmail = emailMap.get(c.email);
+            Customer existingByPhone = phoneMap.get(c.phone);
+
+            if (existingByEmail != null) {
+                // keep smallest ID
+                if (c.customerId < existingByEmail.customerId) {
+                    emailMap.put(c.email, c);
+                    phoneMap.put(c.phone, c);
+                }
+            } else if (existingByPhone != null) {
+                if (c.customerId < existingByPhone.customerId) {
+                    emailMap.put(c.email, c);
+                    phoneMap.put(c.phone, c);
+                }
+            } else {
+                emailMap.put(c.email, c);
+                phoneMap.put(c.phone, c);
+            }
+        }
+
+        // Collect unique customers
+        return new ArrayList<>(new HashSet<>(emailMap.values()));
+    }
+
+    // Step 3: Sort customers
+    private static List<Customer> sortCustomers(List<Customer> customers) {
+        return customers.stream()
+                .sorted(Comparator.comparing((Customer c) -> c.city)
+                        .thenComparing(c -> c.name))
+                .collect(Collectors.toList());
+    }
+
+    // Step 4: Write to CSV
+    private static void writeCustomers(List<Customer> customers, String fileName) throws IOException {
+        try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(fileName))) {
+            writer.write("CustomerID,Name,Email,Phone,City");
+            writer.newLine();
+            for (Customer c : customers) {
+                writer.write(c.toString());
+                writer.newLine();
+            }
+        }
+    }
+}

@@ -1,0 +1,5 @@
+package ThreadSafeSharedCache;
+
+public class customerpreferencecache {
+
+}
